@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Shop Billing System</title>
+  <style>
+    /* ── Reset & Base ─────────────────────────── */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f2f5;
+      color: #222;
+      min-height: 100vh;
+    }
+
+    /* ── Header ───────────────────────────────── */
+    header {
+      background: #1a237e;
+      color: #fff;
+      text-align: center;
+      padding: 18px 10px 12px;
+    }
+    header h1 { font-size: 1.7rem; letter-spacing: 1px; }
+    header p  { font-size: 0.85rem; opacity: 0.8; margin-top: 4px; }
+
+    /* ── Layout ───────────────────────────────── */
+    .container {
+      max-width: 900px;
+      margin: 24px auto;
+      padding: 0 14px;
+    }
+
+    /* ── Cards ────────────────────────────────── */
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.09);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .card h2 {
+      font-size: 1rem;
+      margin-bottom: 14px;
+      color: #1a237e;
+      border-bottom: 2px solid #e8eaf6;
+      padding-bottom: 8px;
+    }
+
+    /* ── Form Row ─────────────────────────────── */
+    .form-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .form-row input {
+      flex: 1;
+      min-width: 120px;
+      padding: 9px 12px;
+      border: 1px solid #c5cae9;
+      border-radius: 5px;
+      font-size: 0.92rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+    .form-row input:focus { border-color: #3f51b5; }
+
+    /* ── Buttons ──────────────────────────────── */
+    .btn {
+      padding: 9px 20px;
+      border: none;
+      border-radius: 5px;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.88; }
+    .btn-add    { background: #3f51b5; color: #fff; }
+    .btn-clear  { background: #e53935; color: #fff; }
+    .btn-print  { background: #43a047; color: #fff; }
+
+    /* ── Items Table ──────────────────────────── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    thead { background: #e8eaf6; }
+    th, td {
+      padding: 9px 11px;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    th { font-weight: 600; color: #3f51b5; }
+    tbody tr:hover { background: #f5f5f5; }
+    .del-btn {
+      background: none;
+      border: none;
+      color: #e53935;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    /* ── Summary ──────────────────────────────── */
+    .summary {
+      text-align: right;
+      line-height: 1.9;
+      font-size: 0.95rem;
+    }
+    .summary .grand {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #1a237e;
+      border-top: 2px solid #1a237e;
+      padding-top: 6px;
+      margin-top: 4px;
+    }
+
+    /* ── Action Row ───────────────────────────── */
+    .action-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    /* ── Print Styles ─────────────────────────── */
+    @media print {
+      header, .card:not(#bill-card), .action-row, .del-btn, .no-print { display: none !important; }
+      body { background: #fff; }
+      #bill-card { box-shadow: none; border: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🛒 Shop Billing System</h1>
+  <p>Basic Assembly Language Project &nbsp;|&nbsp; System Programming</p>
+</header>
+
+<div class="container">
+
+  <!-- ── Add Item Card ───────────────────────── -->
+  <div class="card">
+    <h2>➕ Add Item to Bill</h2>
+    <div class="form-row">
+      <input type="text"   id="itemName"  placeholder="Item Name (e.g. Rice)" />
+      <input type="number" id="itemPrice" placeholder="Price (₹)" min="0" step="0.01" />
+      <input type="number" id="itemQty"   placeholder="Quantity" min="1" value="1" />
+      <button class="btn btn-add" onclick="addItem()">Add Item</button>
+    </div>
+    <p id="errMsg" style="color:#e53935;font-size:0.82rem;margin-top:8px;"></p>
+  </div>
+
+  <!-- ── Bill Card ───────────────────────────── -->
+  <div class="card" id="bill-card">
+    <h2>🧾 Current Bill</h2>
+
+    <!-- Customer info -->
+    <div class="form-row" style="margin-bottom:14px;">
+      <input type="text" id="custName" placeholder="Customer Name (optional)" />
+      <input type="text" id="billDate" readonly />
+    </div>
+
+    <table id="billTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Item</th>
+          <th>Price (₹)</th>
+          <th>Qty</th>
+          <th>Amount (₹)</th>
+          <th class="no-print">Remove</th>
+        </tr>
+      </thead>
+      <tbody id="billBody">
+        <tr id="emptyRow">
+          <td colspan="6" style="text-align:center;color:#aaa;padding:18px;">
+            No items added yet.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Summary -->
+    <div class="summary" style="margin-top:14px;" id="summaryBox">
+      <div>Subtotal &nbsp;&nbsp;&nbsp;: ₹ <span id="subtotal">0.00</span></div>
+      <div>GST (18%) : ₹ <span id="gstAmt">0.00</span></div>
+      <div class="grand">Grand Total : ₹ <span id="grandTotal">0.00</span></div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-row" style="margin-top:16px;">
+      <button class="btn btn-print" onclick="window.print()">🖨 Print Bill</button>
+      <button class="btn btn-clear" onclick="clearBill()">🗑 Clear All</button>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+  /*
+   * ════════════════════════════════════════════════════════
+   *  Shop Billing System – JavaScript Logic
+   *  Each function maps directly to an assembly routine above
+   * ════════════════════════════════════════════════════════
+   */
+
+  // ── Global State ─────────────────────────────────────────
+  var items = [];          // array of added items
+  var itemCounter = 0;     // serial number counter
+
+  // ── Set today's date in the bill date input ───────────────
+  (function setDate() {
+    var d = new Date();
+    var dateStr = d.toLocaleDateString('en-IN', {
+      day: '2-digit', month: '2-digit', year: 'numeric'
+    });
+    document.getElementById('billDate').value = 'Date: ' + dateStr;
+  })();
+
+  // ── addItem() ─────────────────────────────────────────────
+  //  Reads form inputs, validates, creates item object,
+  //  then calls calcItemAmount() — mirrors calc_item_amount
+  function addItem() {
+    var err = document.getElementById('errMsg');
+    var name  = document.getElementById('itemName').value.trim();
+    var price = parseFloat(document.getElementById('itemPrice').value);
+    var qty   = parseInt(document.getElementById('itemQty').value);
+
+    // Validation
+    if (!name) {
+      err.textContent = 'Please enter item name.'; return;
+    }
+    if (isNaN(price) || price <= 0) {
+      err.textContent = 'Please enter a valid price.'; return;
+    }
+    if (isNaN(qty) || qty < 1) {
+      err.textContent = 'Please enter a valid quantity.'; return;
+    }
+    err.textContent = '';
+
+    /*
+     * Assembly equivalent: calc_item_amount
+     *   MOV EAX, price
+     *   MOV EBX, qty
+     *   IMUL EAX, EBX   ; EAX = price × qty
+     */
+    var amount = calcItemAmount(price, qty);
+
+    itemCounter++;
+    items.push({ id: itemCounter, name: name, price: price, qty: qty, amount: amount });
+
+    renderTable();
+    updateTotals();
+
+    // Clear inputs
+    document.getElementById('itemName').value  = '';
+    document.getElementById('itemPrice').value = '';
+    document.getElementById('itemQty').value   = '1';
+    document.getElementById('itemName').focus();
+  }
+
+  // ── calcItemAmount(price, qty) ────────────────────────────
+  //  Maps to assembly: IMUL EAX, EBX
+  function calcItemAmount(price, qty) {
+    return price * qty;          // assembly: IMUL eax, ebx
+  }
+
+  // ── addToSubtotal(items) ──────────────────────────────────
+  //  Maps to assembly: ADD eax, [subtotal]
+  function addToSubtotal(itemList) {
+    var subtotal = 0;
+    for (var i = 0; i < itemList.length; i++) {
+      subtotal = subtotal + itemList[i].amount; // ADD eax, item_amount
+    }
+    return subtotal;
+  }
+
+  // ── calcGST(subtotal) ─────────────────────────────────────
+  //  Maps to assembly: IMUL eax, ebx then DIV [divisor]
+  //  Formula: (subtotal × gstRate) / 100
+  function calcGST(subtotal) {
+    var gstRate = 18;
+    return (subtotal * gstRate) / 100;  // IMUL then DIV
+  }
+
+  // ── calcGrandTotal(subtotal, gstAmt) ──────────────────────
+  //  Maps to assembly: ADD eax, [gst_amt]
+  function calcGrandTotal(subtotal, gstAmt) {
+    return subtotal + gstAmt;   // ADD eax, [gst_amt]
+  }
+
+  // ── updateTotals() ────────────────────────────────────────
+  //  Calls all arithmetic functions and updates the UI
+  function updateTotals() {
+    var subtotal   = addToSubtotal(items);
+    var gstAmt     = calcGST(subtotal);
+    var grand      = calcGrandTotal(subtotal, gstAmt);
+
+    document.getElementById('subtotal').textContent   = subtotal.toFixed(2);
+    document.getElementById('gstAmt').textContent     = gstAmt.toFixed(2);
+    document.getElementById('grandTotal').textContent = grand.toFixed(2);
+  }
+
+  // ── renderTable() ─────────────────────────────────────────
+  //  Renders the items array into the HTML table
+  function renderTable() {
+    var tbody = document.getElementById('billBody');
+    tbody.innerHTML = '';
+
+    if (items.length === 0) {
+      tbody.innerHTML =
+        '<tr id="emptyRow"><td colspan="6" style="text-align:center;color:#aaa;padding:18px;">No items added yet.</td></tr>';
+      return;
+    }
+
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      var row  = document.createElement('tr');
+      row.innerHTML =
+        '<td>' + item.id + '</td>' +
+        '<td>' + item.name + '</td>' +
+        '<td>₹ ' + item.price.toFixed(2) + '</td>' +
+        '<td>' + item.qty + '</td>' +
+        '<td>₹ ' + item.amount.toFixed(2) + '</td>' +
+        '<td><button class="del-btn" onclick="removeItem(' + item.id + ')">✕</button></td>';
+      tbody.appendChild(row);
+    }
+  }
+
+  // ── removeItem(id) ────────────────────────────────────────
+  //  Removes an item from the items array by its id
+  function removeItem(id) {
+    items = items.filter(function(item) { return item.id !== id; });
+    renderTable();
+    updateTotals();
+  }
+
+  // ── clearBill() ───────────────────────────────────────────
+  //  Resets the entire bill
+  function clearBill() {
+    if (items.length === 0) return;
+    if (!confirm('Clear all items from bill?')) return;
+    items = [];
+    itemCounter = 0;
+    document.getElementById('custName').value = '';
+    renderTable();
+    updateTotals();
+  }
+
+</script>
+
+</body>
+</html>
